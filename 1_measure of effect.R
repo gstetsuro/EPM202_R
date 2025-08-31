@@ -61,6 +61,51 @@ riskdifference(c1,c0,N1,N0, conf.level = 0.95)
 fmsb::riskratio(c1,c0,N1,N0, conf.level=0.95)
 
 #calculation of rates
+whitehall$y<-(whitehall$timeout-whitehall$timein)/365.25
+whitehall$y<-as.numeric(whitehall$y)
+biostat3::survRate(Surv(whitehall$y,all) ~ ncurrsm, data=whitehall)
+
+biostat3::survRate(Surv(whitehall$y/1000,all) ~ ncurrsm, data=whitehall)
+
+biostat3::survRate(Surv(whitehall$y/1000,all) ~ smok, data=whitehall)
+
+r<-biostat3::survRate(Surv(whitehall$y/1000,all) ~ smok, data=whitehall)
+df<-data.frame(
+  rate=c(r$rate),
+  sm=factor(c(r$smok)),
+  lower=c(r$lower),
+  upper=c(r$upper)
+)
+p<-ggplot(data=df, aes(sm, rate))
+p + geom_pointrange(aes(ymin=lower, ymax=upper)) + scale_x_discrete("smoking 
+status", breaks=c(1,2,3,4,5)) + scale_y_continuous("mortality rate (per
+1000")
+
+#calculation of rate ratios
+y0<-sum(whitehall$y[whitehall$ncurrsm==0])
+y1<-sum(whitehall$y[whitehall$ncurrsm==1])
+rateratio(c1, c0, y1, y0)
+
+#calculation of odds ratios
+mwanza<-read_dta("mwanza.dta")
+
+mwanza %>%
+  group_by(case) %>%
+  summarise(freq=n()) %>%
+  mutate(percent.of.case=100*freq/sum(freq))
+
+mwanza %>%
+  group_by(ed) %>%
+  summarise(freq=n()) %>%
+  mutate(percent.of.ed=100*freq/sum(freq))
+
+mwanza %>%
+  group_by(case, ed) %>%
+  summarise(freq=n()) %>%
+  group_by(case) %>%
+  mutate(percent.of.case=100*freq/sum(freq))
+chisq.test(table(mwanza$ed,mwanza$case))
 
 
-  
+
+
